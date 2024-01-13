@@ -3,3 +3,4 @@ videos/
 .env
 venv
 .downloaded
+.access_token
