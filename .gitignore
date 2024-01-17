@@ -2,3 +2,5 @@ __pycache__
 videos/
 .env
 venv
+.downloaded
+.access_token

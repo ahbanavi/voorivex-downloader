@@ -1,4 +1,5 @@
 import json
+import os
 import time
 
 import requests
@@ -18,13 +19,31 @@ def fetch_buildId():
     return True, script_data.get("buildId", "")
 
 
-def get_access_token(username, password):
-    headers_login = {"Content-Type": "application/json"}
-    data_login = {"username": username, "password": password}
-    response_login = requests.post(constants.LOGIN_API_URL, headers=headers_login, json=data_login)
+def get_access_token():
+    # load form access token file, if exists test it with a /me request
+    # if not exists or not valid, fetch new token and save it
+    if os.path.exists(constants.ACCESS_TOKEN_FILE):
+        with open(constants.ACCESS_TOKEN_FILE, "r") as f:
+            access_token = f.read()
+
+        if access_token:
+            if test_me(access_token):
+                print("Token loaded from file.")
+                return True, access_token
+            else:
+                print("Token loaded from file is invalid.")
+
+    headers = {"Content-Type": "application/json"}
+    data = {
+        "username": constants.ACADEMY_USERNAME,
+        "password": constants.ACADEMY_PASSWORD,
+    }
+    response_login = requests.post(constants.LOGIN_API_URL, headers=headers, json=data)
 
     if response_login.status_code != 201:
-        error_message = f"Login request failed with status code {response_login.status_code}."
+        error_message = (
+            f"Login request failed with status code {response_login.status_code}."
+        )
         try:
             error_details = response_login.json().get("error", "")
             error_message += f" Details: {error_details}"
@@ -37,7 +56,16 @@ def get_access_token(username, password):
     if not access_token:
         return False, "Obtained response but access token was not found."
 
+    with open(constants.ACCESS_TOKEN_FILE, "w") as f:
+        f.write(access_token)
+
     return True, access_token
+
+
+def test_me(bearer_token):
+    headers = {"Authorization": f"Bearer {bearer_token}"}
+    response = requests.get(constants.ME_URL, headers=headers)
+    return response.status_code == 200
 
 
 def fetch_next_token(access_token, buildId):
@@ -73,9 +101,10 @@ def auth():
     time.sleep(1)
 
     # Get Access Token
-    success, access_token = get_access_token(constants.ACADEMY_USERNAME, constants.ACADEMY_PASSWORD)
+    success, access_token = get_access_token()
     if not success:
-        print(access_token)  # In case of failure, the access_token variable will contain the error message.
+        # In case of failure, the access_token variable will contain the error message.
+        print(access_token)
         exit(1)
     print("Successfully logged in and obtained access token.")
 
@@ -84,7 +113,8 @@ def auth():
     # Fetch Next Token
     success, bearer_token = fetch_next_token(access_token, buildId)
     if not success:
-        print(bearer_token)  # In case of failure, the bearer_token variable will contain the error message.
+        # In case of failure, the bearer_token variable will contain the error message.
+        print(bearer_token)
         exit(1)
     print("Next token fetched successfully.")
 
