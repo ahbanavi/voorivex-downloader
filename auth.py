@@ -33,10 +33,12 @@ def get_access_token():
             else:
                 print("Token loaded from file is invalid.")
 
+    otp = input("Enter OTP: ")
     headers = {"Content-Type": "application/json"}
     data = {
         "username": constants.ACADEMY_USERNAME,
         "password": constants.ACADEMY_PASSWORD,
+        "otp": otp,
     }
     response_login = requests.post(constants.LOGIN_API_URL, headers=headers, json=data)
 
