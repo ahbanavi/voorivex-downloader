@@ -26,6 +26,10 @@ def get_videos_list(bearer_token, target_directory=""):
         f"{constants.VIDEOS_LIST_URL}",
         headers={"Authorization": f"Bearer {bearer_token}"},
     )
+
+    if response.status_code == 409:
+        return False, response.json().get("message", "Failed to fetch videos list")
+
     video_list = response.json()
     all_file_keys = []
 
